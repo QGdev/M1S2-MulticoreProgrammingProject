@@ -28,14 +28,14 @@ public interface Transaction {
     boolean isCommitted();
 
     /**
-     * Add a register to the list of read registers
+     * Add a register to the list of read operations
      *
      * @param register the register to add
      */
     void addToLWS(Register<?> register);
 
     /**
-     * Add a register to the list of written registers
+     * Add a register to the list of write operations
      *
      * @param register the register to add
      */
