@@ -4,6 +4,8 @@ package fr.univnantes.pmc.project.api;
  * Interface for a register
  *
  * @param <T> the type of the value
+ * @author Quentin GOMES DOS REIS
+ * @author Matthéo LÉCRIVAIN
  */
 public interface Register<T> {
 
