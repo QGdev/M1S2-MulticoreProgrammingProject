@@ -48,7 +48,7 @@ public interface Register<T> {
      * @param commitDate the date of the commit
      * @throws AbortException if the transaction is aborted
      */
-    void commit(Transaction t, int commitDate) throws AbortException;
+    void commit(Transaction t, long commitDate) throws AbortException;
 
     /**
      * Lock the register
