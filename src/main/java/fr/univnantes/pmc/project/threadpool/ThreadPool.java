@@ -2,10 +2,7 @@ package fr.univnantes.pmc.project.threadpool;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.Future;
-import java.util.concurrent.FutureTask;
 
 /**
  * My implementation of a working threadPool that will handle Future to make
@@ -21,7 +18,7 @@ import java.util.concurrent.FutureTask;
  */
 public class ThreadPool {
 
-    private ConcurrentLinkedQueue<FutureTask> taskQueue = null;
+    private ConcurrentLinkedQueue<Runnable> taskQueue = null;
     private final List<ThreadRunnable> runnables = new ArrayList<>();
     private final List<Thread> threads = new ArrayList<>();
     private boolean isStopped = false;
@@ -33,7 +30,7 @@ public class ThreadPool {
      */
     public ThreadPool(int noOfThreads) {
 
-        taskQueue = new ConcurrentLinkedQueue<FutureTask>();
+        taskQueue = new ConcurrentLinkedQueue<Runnable>();
 
         // Launch all threads
         for (int i = 0; i < noOfThreads; i++) {
@@ -49,14 +46,10 @@ public class ThreadPool {
     }
 
     /**
-     * This method will return true if the threadPool is stopped
-     *
-     * @return true if the threadPool is stopped
+     * This method will submit a task to the thread pool
      */
-    public synchronized <T> Future<T> submit(Callable<T> task) {
-        FutureTask<T> createdTask = new FutureTask<T>(task);
-        taskQueue.add(createdTask);
-        return createdTask;
+    public synchronized boolean submit(Runnable task) {
+        return taskQueue.add(task);
     }
 
     /**

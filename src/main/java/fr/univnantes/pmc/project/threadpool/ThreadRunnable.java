@@ -1,7 +1,6 @@
 package fr.univnantes.pmc.project.threadpool;
 
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.FutureTask;
 
 /**
  * This is the hearth of our custom ThreadPool this will make each threads able
@@ -14,7 +13,7 @@ import java.util.concurrent.FutureTask;
 public class ThreadRunnable implements Runnable {
 
     private Thread thread = null;
-    private ConcurrentLinkedQueue<FutureTask> taskQueue = null;
+    private ConcurrentLinkedQueue<Runnable> taskQueue = null;
     private boolean isStopped = false;
 
     /**
@@ -22,7 +21,7 @@ public class ThreadRunnable implements Runnable {
      *
      * @param queue the queue that will be used to fetch the tasks
      */
-    public ThreadRunnable(ConcurrentLinkedQueue<FutureTask> queue) {
+    public ThreadRunnable(ConcurrentLinkedQueue<Runnable> queue) {
         taskQueue = queue;
     }
 
