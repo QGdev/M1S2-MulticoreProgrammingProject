@@ -11,9 +11,20 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
+/**
+ * Used to test the implementation of the TL2 protocol
+ *
+ * @author Quentin GOMES DOS REIS
+ * @author Matthéo LÉCRIVAIN
+ */
 public class TL2Example {
 
     public static void main(String[] args) throws AbortException, InterruptedException {
+
+        /**
+         * Test of the register and TL2 protocol with exchange function from the subject
+         */
+
         Register<Integer> X = new RegisterImpl<>(4, 0);
         Register<Integer> Y = new RegisterImpl<>(1, 0);
 
@@ -34,13 +45,22 @@ public class TL2Example {
             }
         }
 
+        /**
+         * Test of the dictionary and TL2 protocol by testing the add in a concurrent way
+         *
+         * Will generate words of length 1 to 3 with letters from the string letters
+         * Add them to a queue and then create 10 threads that will add the words from the queue
+         * to the dictionary
+         *
+         * If the test passed, the dictionary should contain all the words generated
+         */
         TL2Dictionary dico = new TL2Dictionary();
         String letters = "abcdefghijklmnopqrstuvwxyz";
         List<String> words = new ArrayList<>();
         ConcurrentLinkedQueue<String> queue = new ConcurrentLinkedQueue<>();
 
-        //  Will generate words of length 1 to 5 with letters from the string letters
-        for (int i = 1; i <= 2; i++) {
+        //  Will generate words of length 1 to 3 with letters from the string letters
+        for (int i = 1; i <= 3; i++) {
             for (int j = 0; j < Math.pow(letters.length(), i); j++) {
                 StringBuilder word = new StringBuilder();
                 int k = j;
@@ -53,6 +73,9 @@ public class TL2Example {
             }
         }
 
+        /**
+         * Create 10 threads that will add the words from the queue to the dictionary
+         */
         Thread[] t = new Thread[10];
         for (int i = 0; i < t.length; i++) {
             t[i] = new Thread(() -> {
@@ -69,6 +92,7 @@ public class TL2Example {
             });
         }
 
+        // Start the threads and wait for them to finish
         for (int i = 0; i < t.length; i++) {
             t[i].start();
         }
@@ -76,6 +100,9 @@ public class TL2Example {
             t[i].join();
         }
 
+        /**
+         * Check if every word is contained in the dictionary
+         */
         boolean testPassed = true;
         for (String word : words) {
             boolean test = dico.contains(word);
