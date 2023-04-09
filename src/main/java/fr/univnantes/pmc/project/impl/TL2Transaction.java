@@ -18,8 +18,8 @@ import java.util.concurrent.atomic.AtomicLong;
 public class TL2Transaction implements Transaction {
 
     private static final AtomicLong CLOCK = new AtomicLong(0L);
-    private final List<Register<?>> lrs = new ArrayList<>();
-    private final List<Register<?>> lws = new ArrayList<>();
+    private final List<Register<?>> localReadingSet = new ArrayList<>();
+    private final List<Register<?>> localWritingSet = new ArrayList<>();
     private boolean isCommitted = false;
     private long commitDate = 0L;
     private long birthdate;
@@ -30,8 +30,8 @@ public class TL2Transaction implements Transaction {
      */
     @Override
     public void begin() {
-        lrs.clear();
-        lws.clear();
+        localReadingSet.clear();
+        localWritingSet.clear();
         birthdate = CLOCK.get();
     }
 
@@ -49,10 +49,10 @@ public class TL2Transaction implements Transaction {
         lockLWS();
 
         // We check the coherence of the transaction
-        for (Register<?> register : lrs) {
+        for (Register<?> register : localReadingSet) {
             if (register.getDate() > birthdate) {
                 releaseLocks();
-                throw new AbortException("TL2Transaction - tryToCommit : Incoehrence between the birthdate of the transaction and the date of the register");
+                throw new AbortException("TL2Transaction - tryToCommit : Incoherence between the birthdate of the transaction and the date of the register");
             }
         }
 
@@ -60,7 +60,7 @@ public class TL2Transaction implements Transaction {
         commitDate = CLOCK.getAndIncrement();
 
         // We commit all the write registers
-        for (Register<?> register : lws) {
+        for (Register<?> register : localWritingSet) {
             register.commit(this, commitDate);
         }
 
@@ -87,7 +87,7 @@ public class TL2Transaction implements Transaction {
      */
     @Override
     public void addToLWS(Register<?> register) {
-        this.lws.add(register);
+        this.localWritingSet.add(register);
     }
 
 
@@ -98,7 +98,7 @@ public class TL2Transaction implements Transaction {
      */
     @Override
     public void addToLRS(Register<?> register) {
-        this.lrs.add(register);
+        this.localReadingSet.add(register);
     }
 
 
@@ -125,7 +125,7 @@ public class TL2Transaction implements Transaction {
         // If a register is already locked by another
         // transaction, we throw an abort exception,
         // and we will continue to release the other locks
-        for (Register<?> register : lrs) {
+        for (Register<?> register : localReadingSet) {
             try {
                 register.unlock(this);
             } catch (AbortException e) {
@@ -148,7 +148,7 @@ public class TL2Transaction implements Transaction {
     private void lockLWS() throws AbortException {
         try {
             // We lock all the registers in lws
-            for (Register<?> register : lws) {
+            for (Register<?> register : localWritingSet) {
                 register.lock(this);
             }
         } catch (AbortException e) {
