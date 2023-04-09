@@ -13,10 +13,16 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class WebGrep {
 
+    // Used to store each urls that have been explored
     private final static TL2Dictionary explored_ = new TL2Dictionary();
 
+    // Used to store each urls that have been explored and their parsed page
     private final static ConcurrentHashMap<String, ParsedPage> explored = new ConcurrentHashMap<>();
+
+    // Used to linearize the printing of the results
     private final static MichaelScottQueue<String> printQueue = new MichaelScottQueue<>();
+
+    // Used to parallelize the exploration of the pages with our custom thread pool
     private final static ThreadPool threadPool = new ThreadPool(Tools.numberThreads());
 
     private final static ParsedPage nullPage = new ParsedPage() {
@@ -37,15 +43,16 @@ public class WebGrep {
         }
     };
 
-    /*
-     * TODO : the search must be parallelized between the given number of threads
+    /**
+     * Explore a page and recursively explore other pages
+     *
+     * @param address the address of the page to explore
      */
     private static void explore(String address) {
         threadPool.submit(() -> {
             try {
                 /*
-                 * Check that the page was not already explored and adds it TODO : the check and
-                 * insertion must be atomic. Explain why. How to do it?
+                 * Check that the page was not already explored and adds it
                  */
                 if (explored.putIfAbsent(address, nullPage) == null) {
                     // Parse the page to find matches and hypertext links
@@ -69,15 +76,13 @@ public class WebGrep {
 
     }
 
+
     public static void main(String[] args) throws InterruptedException, IOException {
         // Initialize the program using the options given in argument
         if (args.length == 0)
             Tools.initialize("-cet --threads=1000 Nantes https://fr.wikipedia.org/wiki/Nantes");
         else
             Tools.initialize(args);
-
-        // TODO Just do it!
-        System.err.println("You must parallelize the application between " + Tools.numberThreads() + " threads!\n");
 
         // Get the starting URL given in argument
         for (String address : Tools.startingURL())
