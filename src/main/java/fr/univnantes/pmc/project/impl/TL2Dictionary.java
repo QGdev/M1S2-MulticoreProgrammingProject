@@ -33,16 +33,14 @@ public class TL2Dictionary {
      * @param s The string that is being inserted in the set
      * @return true if s was not already inserted, false otherwise
      */
-    public synchronized boolean add(String s) throws AbortException {
-        Transaction transaction = this.start.transaction;
-        transaction.begin();
+    public boolean add(String s) throws AbortException {
         if (s.isEmpty()) {
             return emptyAbsent.getAndSet(false);
         }
-        transaction.begin();
-        System.out.println(start.add(transaction, s, 0));
-        transaction.tryToCommit();
-        return transaction.isCommitted();
+        start.transaction.begin();
+        start.add(start.transaction, s, 0);
+        start.transaction.tryToCommit();
+        return start.transaction.isCommitted();
     }
 
     /**
