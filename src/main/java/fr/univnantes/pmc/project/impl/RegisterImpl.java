@@ -4,6 +4,7 @@ import fr.univnantes.pmc.project.api.AbortException;
 import fr.univnantes.pmc.project.api.Register;
 import fr.univnantes.pmc.project.api.Transaction;
 
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -38,8 +39,8 @@ public class RegisterImpl<T> implements Register<T> {
 
 
     private final AtomicReference<T> value;
-    private long date;
-    private Transaction transactionLock = null;
+    private final AtomicReference<Transaction> transactionLock;
+    private final AtomicLong date;
 
     private RegisterCopy<T> lcx = null;
 
@@ -51,7 +52,8 @@ public class RegisterImpl<T> implements Register<T> {
      */
     public RegisterImpl(T value, long date) {
         this.value = new AtomicReference<T>(value);
-        this.date = date;
+        this.date = new AtomicLong(date);
+        this.transactionLock = new AtomicReference<Transaction>(null);
     }
 
 
@@ -72,7 +74,7 @@ public class RegisterImpl<T> implements Register<T> {
      */
     @Override
     public long getDate() {
-        return date;
+        return date.get();
     }
 
     /**
@@ -88,7 +90,7 @@ public class RegisterImpl<T> implements Register<T> {
             return lcx.value;
 
         //  No local copy ? Create one
-        lcx = new RegisterCopy<>(value.get(), date);
+        lcx = new RegisterCopy<>(value.get(), date.get());
         transaction.addToLRS(this);
 
         //  Check for inconsistencies
@@ -108,10 +110,10 @@ public class RegisterImpl<T> implements Register<T> {
     public void write(Transaction t, T v) throws AbortException {
         //  No local copy ? Create one
         if (lcx == null)
-            lcx = new RegisterCopy<T>(value.get(), date);
+            lcx = new RegisterCopy<T>(value.get(), date.get());
 
         lcx.value = v;
-        t.addToLRS(this);
+        t.addToLWS(this);
     }
 
     /**
@@ -124,12 +126,14 @@ public class RegisterImpl<T> implements Register<T> {
     @Override
     public void commit(Transaction transaction, long commitDate) throws AbortException {
         //  Check if the transaction is the one that locked the register
-        if (transactionLock != transaction)
+        if (transactionLock.get() != null && transactionLock.get() != transaction)
             throw new AbortException("TL2Transaction - commit: Already locked by another transaction");
 
-        this.date = commitDate;
-        this.value.set(lcx.value);
-        lcx = null;
+        this.date.set(commitDate);
+        if (lcx != null) {
+            this.value.set(lcx.value);
+            lcx = null;
+        }
     }
 
     /**
@@ -141,10 +145,8 @@ public class RegisterImpl<T> implements Register<T> {
     @Override
     public void lock(Transaction transaction) throws AbortException {
         //  Check if the register is already locked
-        if (transactionLock != null)
+        if (!transactionLock.compareAndSet(null, transaction))
             throw new AbortException("TL2Transaction - lock: Already locked by someone");
-
-        transactionLock = transaction;
     }
 
     /**
@@ -156,10 +158,10 @@ public class RegisterImpl<T> implements Register<T> {
     @Override
     public void unlock(Transaction transaction) throws AbortException {
         //  Check if the transaction is the one that locked the register
-        if (transactionLock != transaction)
-            throw new AbortException("TL2Transaction - unlock: Locked by another transaction");
-
-        transactionLock = null;
+        synchronized (transactionLock) {
+            if (!transactionLock.compareAndSet(null, null) && !transactionLock.compareAndSet(transaction, null))
+                throw new AbortException("TL2Transaction - unlock: Locked by another transaction");
+        }
     }
 
     /**
@@ -168,7 +170,7 @@ public class RegisterImpl<T> implements Register<T> {
      * @return a copy of the register
      */
     @Override
-    public RegisterImpl<T> clone() throws CloneNotSupportedException {
-        return new RegisterImpl<T>(this.value.get(), this.date);
+    public RegisterImpl<T> clone() {
+        return new RegisterImpl<T>(this.value.get(), this.date.get());
     }
 }
