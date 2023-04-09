@@ -33,7 +33,7 @@ public class TL2Dictionary {
      * @param s The string that is being inserted in the set
      * @return true if s was not already inserted, false otherwise
      */
-    public boolean add(String s) throws AbortException {
+    public synchronized boolean add(String s) throws AbortException {
         if (s.isEmpty()) {
             return emptyAbsent.getAndSet(false);
         }
