@@ -24,7 +24,7 @@ public class Dictionary {
      * @param s The string that is being inserted in the set
      * @return true if s was not already inserted, false otherwise
      */
-    public synchronized boolean add(String s) {
+    public boolean add(String s) {
         if (s.isEmpty()) {
             return emptyAbsent.getAndSet(false);
         }
